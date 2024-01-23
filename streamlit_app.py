@@ -171,11 +171,91 @@ def plot_correlation_heatmap(df):
 
     st.pyplot(fig) 
 
+#--------------------------------------------------------------
+# Bivariate 
+#--------------------------------------------------------------
+        
+def bivariate_relation_plot(df, x_col, y_col, num_bins=10):
+    # Erstelle den Subplot mit 1 Zeile und 2 Spalten
+    fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+
+    # Plot 1: regplot (ähnlich wie lmplot)
+    sns.regplot(x=x_col, y=y_col, data=df,
+                line_kws={'color': 'red', 'linestyle': '--'},
+                scatter_kws={'edgecolor': 'black', 'facecolors': 'blue', 'alpha': 0.2}, ax=axs[0])
+
+    axs[0].set_xlabel(x_col.title())
+    axs[0].set_ylabel(y_col.title())
+    axs[0].set_title(f'Regplot for {y_col.title()} vs {x_col.title()}')
+
+    # Plot 2: binned barplot
+    # Teile die x-Variable in gleich große Bins auf
+    df['bins'] = pd.cut(df[x_col], bins=num_bins)
+
+    # Berechne den Mittelwert und die Standardabweichung für jeden Bin
+    bin_stats = df.groupby('bins')[y_col].agg(['mean', 'std']).reset_index()
+
+    # Extrahiere die Mitte jedes Intervalls als x-Werte
+    bin_mids = bin_stats['bins'].apply(lambda x: x.mid).values
+
+    # Benutzerdefinierte Bin-Breiten
+    bin_widths = [interval.length for interval in bin_stats['bins']]
+
+    # Erzeuge den Barplot mit Abstand zwischen den Balken und schwarzer Umrandung
+    axs[1].bar(bin_mids, bin_stats['mean'], width=bin_widths, color='skyblue', alpha=0.7, edgecolor='black', linewidth=1, label='Mittelwert')
+
+    # Füge die Fehlerbalken separat hinzu
+    axs[1].errorbar(bin_mids, bin_stats['mean'], yerr=bin_stats['std'], fmt='none', capsize=5, color='black', label='Std')
+
+    axs[1].set_xlabel(x_col.title())
+    axs[1].set_ylabel(y_col.title())
+    axs[1].set_title(f'Binned Barplot for Car Price VS {x_col.title()}')    
+    axs[1].tick_params(axis='x', rotation=90)
+
+    # Zeige den Plot an
+    st.pyplot(fig)  # Verwenden Sie st.pyplot statt plt.show()
+
+#####################
+    
+#--------------------------------------------------------------
+# Best Selling Makes
+#--------------------------------------------------------------
+
+def plot_best_selling_makes(df, limit_selection):
+    dfs = []
+
+    # Iterate over non-numeric columns
+    for column in df.columns:
+        # Count the occurrences of each level
+        counts = df[column].value_counts().reset_index()
+        # Rename columns for consistency
+        counts.columns = ['Level', 'Count']
+        # Add a new column for the variable name
+        counts['Variable'] = column
+        # Append the counts DataFrame to the list
+        dfs.append(counts)
+
+    # Concatenate all DataFrames in the list
+    counts_df = pd.concat(dfs, ignore_index=True)
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    # Create a barplot for the current variable
+    sns.barplot(x='Level', y='Count', data=counts_df[counts_df["Variable"] == "fuel"], ax=ax)
+    ax.set_title(f'Top {limit_selection} Number of Sales per Fuel Type')
+    ax.set_xlabel('Car Make')
+    ax.set_ylabel('Number of Sales')
+    # Rotate x-axis labels for better readability
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha='right')
+
+    # Anzeigen der Abbildung
+    st.pyplot(fig)
+
+
+
 #==============================================================
 # EDA page 
 #==============================================================
     
-
 def eda_visualization():
     st.title("Explorative Data Analysis")
     st.write("""
@@ -252,8 +332,13 @@ def eda_visualization():
                     st.warning("No data available for the selected filters. Please adjust your selection.")
                 else:
                     plot_correlation_heatmap(filtered_df)
-
-
+            if "Price VS Milage" in chosen_plot:
+                bivariate_relation_plot(filtered_df, 'mileage', 'price', num_bins=10)
+            if "Price VS HP" in chosen_plot:
+                bivariate_relation_plot(filtered_df, 'hp', 'price', num_bins=10)
+            if "Price VS Year" in chosen_plot:
+                bivariate_relation_plot(filtered_df, 'year', 'price', num_bins=10)
+            
 ###############################################################
 # Modelling
 ###############################################################    
