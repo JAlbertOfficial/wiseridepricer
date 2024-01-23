@@ -49,6 +49,10 @@ def home():
 #==============================================================
 # Plotting functions
 #==============================================================
+    
+#--------------------------------------------------------------
+# Best Selling Makes
+#--------------------------------------------------------------
 
 def plot_best_selling_makes(df, limit_selection):
     dfs = []
@@ -79,6 +83,10 @@ def plot_best_selling_makes(df, limit_selection):
     # Anzeigen der Abbildung
     st.pyplot(fig)
 
+#--------------------------------------------------------------
+# Best Selling Models
+#--------------------------------------------------------------
+
 def plot_best_selling_models(df, limit_selection):
     dfs = []
 
@@ -108,6 +116,29 @@ def plot_best_selling_models(df, limit_selection):
     # Anzeigen der Abbildung
     st.pyplot(fig)
 
+#--------------------------------------------------------------
+# Most expensive car makes
+#--------------------------------------------------------------
+
+def plot_most_expensive_makes(df, limit_selection):
+    # Group by 'make' and calculate mean and standard deviation of prices
+    top_price_makes = df.groupby('make')['price'].mean().sort_values(ascending=False).head(limit_selection)
+    top_price_std = df.groupby('make')['price'].std().sort_values(ascending=False).head(limit_selection)
+
+    # Plot the bar chart
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.barplot(x=top_price_makes.index, y=top_price_makes.values, ax=ax, ci=None)
+    ax.set_title(f'Top {limit_selection} Most Valuable Car Makes')
+    ax.set_ylabel('Mean Price (€)')
+    ax.set_xlabel('')
+    ax.tick_params(axis='x', rotation=90)  # Rotate x-axis labels by 90 degrees
+
+    # Add error bars to the bar chart
+    ax.errorbar(x=top_price_makes.index, y=top_price_makes.values, yerr=top_price_std.values, fmt='none', color='black', capsize=5)
+
+    # Anzeigen der Abbildung
+    st.pyplot(fig)
+
 #==============================================================
 # EDA page 
 #==============================================================
@@ -121,10 +152,10 @@ def eda_visualization():
     """)
 
     # Select Box für "What do you want to plot?"
-    chosen_option = st.selectbox("What do you want to plot?", ["Best-Selling Makes", "Best-Selling Models", "Most expensive car makes",
-                                                             "Most expensive car models", "Relationship between car prices and car features"])
+    chosen_option = st.selectbox("What do you want to plot?", ["Best-Selling Makes", "Best-Selling Models", "Most valuable car makes",
+                                                             "Most valuable car models", "Relationship between car prices and car features"])
 
-    if chosen_option in ["Best-Selling Makes", "Best-Selling Models", "Most expensive car makes", "Most expensive car models"]:
+    if chosen_option in ["Best-Selling Makes", "Best-Selling Models", "Most valuable car makes", "Most valuable car models"]:
         # Schieberegler für "Limit selection to (Max 50)"
         limit_selection = st.slider("Limit selection to (Max 50)", min_value=1, max_value=50, value=10)
 
@@ -156,6 +187,8 @@ def eda_visualization():
             plot_best_selling_makes(df_raw, limit_selection)
         elif chosen_option == "Best-Selling Models":
             plot_best_selling_models(df_raw, limit_selection)
+        elif chosen_option == "Most valuable car makes":
+            plot_most_expensive_makes(df_raw, limit_selection)
 
 # Annahme: df_raw und limit_selection wurden zuvor definiert
 eda_visualization() 
