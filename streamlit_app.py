@@ -155,6 +155,22 @@ def plot_most_valuable_models(df, limit_selection):
     # Anzeigen der Abbildung
     st.pyplot(fig)
 
+#--------------------------------------------------------------
+# Correlation heatmap
+#--------------------------------------------------------------
+    
+def plot_correlation_heatmap(df):
+    numerical_columns = ['price', 'mileage', 'hp', 'year']
+
+    correlation_matrix = df[numerical_columns].corr()
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', vmin=-1, vmax=1, fmt='.2f', linewidths=.5, ax=ax)
+
+    ax.set_title(f"Correlation heatmap")
+
+    st.pyplot(fig) 
+
 #==============================================================
 # EDA page 
 #==============================================================
@@ -208,6 +224,13 @@ def eda_visualization():
             plot_most_valuable_makes(df_raw, limit_selection)
         elif chosen_option == "Most valuable car models":
             plot_most_valuable_models(df_raw, limit_selection)
+        elif chosen_option == "Relationship between car prices and car features":
+            if chosen_make == "All makes" and chosen_plot_all_makes == "Correlation between all variables":
+                plot_correlation_heatmap(df_raw)
+                
+            elif chosen_make != "All makes" and chosen_model == "All models" and chosen_plot_all_models == "Correlation between all variables":
+                plot_correlation_heatmap(df_raw[df_raw["make"]==chosen_make])         
+
 
 
 
