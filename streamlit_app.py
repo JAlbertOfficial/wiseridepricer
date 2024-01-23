@@ -3,6 +3,7 @@
 ###############################################################
 
 import streamlit as st
+from streamlit_option_menu import option_menu
 import pandas as pd
 import matplotlib.pyplot as plt 
 import seaborn as sns
@@ -18,14 +19,6 @@ warnings.filterwarnings("ignore")
 path = "./data/raw/autoscout24.csv"
 
 df_raw = pd.read_csv(path)
-#df_top5 = df_full['make'].value_counts().head(5).index
-#df_top10 = df_full['make'].value_counts().head(10).index
-
-
-#DATA_URL = ('https://github.com/JAlbertOfficial/wiseridepricer/blob/main/data/raw/autoscout24.csv')
-
-#data = pd.read_csv(DATA_URL)
-
 
 ###############################################################
 # Home Page
@@ -40,7 +33,7 @@ def home():
     """)
     # Hier können Sie ein Bild oder ein Flowchart hinzufügen
     # st.image("path/to/image.png", use_column_width=True)
-    st.button("Get Started")
+    #st.button("Get Started")
 
 ###############################################################
 # EDA
@@ -165,6 +158,7 @@ def plot_most_valuable_models(df, limit_selection):
 #==============================================================
 # EDA page 
 #==============================================================
+    
 def eda_visualization():
     st.title("Explorative Data Analysis")
     st.write("""
@@ -215,8 +209,7 @@ def eda_visualization():
         elif chosen_option == "Most valuable car models":
             plot_most_valuable_models(df_raw, limit_selection)
 
-# Annahme: df_raw und limit_selection wurden zuvor definiert
-eda_visualization() 
+
 
 ###############################################################
 # Modelling
@@ -240,27 +233,15 @@ def prediction():
 # Navigation
 ###############################################################
 
-# Hauptnavigation in Form von klickbaren Kacheln
-selected_page = st.sidebar.button("Home")
-if selected_page:
+selected = option_menu(
+    menu_title=None,
+    options=["Home", "Visualize", "Predict"],
+    orientation="horizontal"
+)
+
+if selected == "Home":
     home()
-
-selected_page = st.sidebar.button("EDA and Visualization")
-if selected_page:
+if selected == "Visualize":
     eda_visualization()
-
-selected_page = st.sidebar.button("Modelling")
-if selected_page:
-    modelling()
-
-selected_page = st.sidebar.button("Prediction")
-if selected_page:
+if selected == "Predict":
     prediction()
-
-# Linke Sidebar für spezifische Optionen beim Plotten und Modellieren
-if "EDA and Visualization" in st.session_state:
-    st.sidebar.title("Visualization Options")
-    # Hier können Sie spezifische Optionen für die Visualisierung hinzufügen, z.B. Datenauswahl, Diagrammtypen usw.
-elif "Modelling" in st.session_state:
-    st.sidebar.title("Modeling Options")
-    # Hier können Sie spezifische Optionen für das Modellieren hinzufügen, z.B. Datensubset-Auswahl, Preprocessing-Optionen, Modelltypen usw." 
