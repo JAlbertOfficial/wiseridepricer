@@ -287,43 +287,43 @@ def eda_visualization():
     """)
 
     # Select Box für "What do you want to plot?"
-    chosen_option = st.selectbox("What do you want to plot?", ["Best-Selling Makes", "Best-Selling Models", "Most valuable car makes",
+    chosen_option = st.selectbox("**What do you want to plot?**", ["Best-Selling Makes", "Best-Selling Models", "Most valuable car makes",
                                                              "Most valuable car models", "Relationship between car prices and car features"])
 
     if chosen_option in ["Best-Selling Makes", "Best-Selling Models", "Most valuable car makes", "Most valuable car models"]:
         # Schieberegler für "Limit selection to (Max 50)"
-        limit_selection = st.slider("Limit selection to (Max 50)", min_value=1, max_value=50, value=10)
+        limit_selection = st.slider("**Limit selection to (Max 50)**", min_value=1, max_value=50, value=10)
 
     if chosen_option == "Relationship between car prices and car features":
         # Multiselect für "Chose makes to be included"
-        chosen_makes = st.multiselect("Chose makes to be included", ["All"] + list(df_raw["make"].unique()), default=["All"])
+        chosen_makes = st.multiselect("**Chose makes to be included**", ["All"] + list(df_raw["make"].unique()), default=["All"])
 
         # Multiselect für "Chose models to be included"
-        chosen_models = st.multiselect("Chose models to be included", ["All"] + list(df_raw["model"].unique()), default=["All"])
+        chosen_models = st.multiselect("**Chose models to be included**", ["All"] + list(df_raw["model"].unique()), default=["All"])
 
         # Multiselect für "Chose fuel types to be included"
-        chosen_fuels = st.multiselect("Chose fuel types to be included", ["All"] + list(df_raw["fuel"].unique()), default=["All"])
+        chosen_fuels = st.multiselect("**Chose fuel types to be included**", ["All"] + list(df_raw["fuel"].unique()), default=["All"])
 
         # Multiselect für "Chose gear types to be included"
-        chosen_gears = st.multiselect("Chose gear types to be included", ["All"] + list(df_raw["gear"].unique()), default=["All"])
+        chosen_gears = st.multiselect("**Chose gear types to be included**", ["All"] + list(df_raw["gear"].unique()), default=["All"])
 
         # Multiselect für "Chose offer types to be included"
-        chosen_offers = st.multiselect("Chose offer types to be included", ["All"] + list(df_raw["offerType"].unique()), default=["All"])
+        chosen_offers = st.multiselect("**Chose offer types to be included**", ["All"] + list(df_raw["offerType"].unique()), default=["All"])
 
         # Slider für "Select mileage range"
-        mileage_range = st.slider("Select mileage range", min_value=df_raw["mileage"].min(), max_value=df_raw["mileage"].max(), value=(df_raw["mileage"].min(), df_raw["mileage"].max()))
+        mileage_range = st.slider("**Select mileage range**", min_value=df_raw["mileage"].min(), max_value=df_raw["mileage"].max(), value=(df_raw["mileage"].min(), df_raw["mileage"].max()))
 
         # Slider für "Select price range"
-        price_range = st.slider("Select price range", min_value=df_raw["price"].min(), max_value=df_raw["price"].max(), value=(df_raw["price"].min(), df_raw["price"].max()))
+        price_range = st.slider("**Select price range**", min_value=df_raw["price"].min(), max_value=df_raw["price"].max(), value=(df_raw["price"].min(), df_raw["price"].max()))
 
         # Slider für "Select hp range"
-        hp_range = st.slider("Select hp range", min_value=df_raw["hp"].min(), max_value=df_raw["hp"].max(), value=(df_raw["hp"].min(), df_raw["hp"].max()))
+        hp_range = st.slider("**Select hp range**", min_value=df_raw["hp"].min(), max_value=df_raw["hp"].max(), value=(df_raw["hp"].min(), df_raw["hp"].max()))
 
         # Slider für "Select year range"
-        year_range = st.slider("Select year range", min_value=df_raw["year"].min(), max_value=df_raw["year"].max(), value=(df_raw["year"].min(), df_raw["year"].max()))
+        year_range = st.slider("**Select year range**", min_value=df_raw["year"].min(), max_value=df_raw["year"].max(), value=(df_raw["year"].min(), df_raw["year"].max()))
 
-        # Multiselect für "Chose plot type"
-        chosen_plot = st.multiselect("Chose plot type", ["Correlation heatmap", "Price VS Milage", "Price VS Fuel Type", "Price VS Gear", "Price VS Offer Type", "Price VS HP", "Price VS Year"], default=["Correlation heatmap"])
+        # Selectbox für "Chose plot type" (einfache Selectbox statt Multiselect)
+        chosen_plot = st.selectbox("**Chose plot type**", ["Correlation heatmap", "Price VS Milage", "Price VS Fuel Type", "Price VS Gear", "Price VS Offer Type", "Price VS HP", "Price VS Year"], index=0)
     
         # Erzeugen Sie ein Subset des DataFrame basierend auf den ausgewählten Filtern
         filtered_df = df_raw[
@@ -348,22 +348,22 @@ def eda_visualization():
         elif chosen_option == "Most valuable car models":
             plot_most_valuable_models(df_raw, limit_selection)
         elif chosen_option == "Relationship between car prices and car features":
-            if "Correlation heatmap" in chosen_plot:
+            if chosen_plot == "Correlation heatmap":
                 if filtered_df.empty:
                     st.warning("No data available for the selected filters. Please adjust your selection.")
                 else:
                     plot_correlation_heatmap(filtered_df)
-            if "Price VS Milage" in chosen_plot:
+            elif chosen_plot == "Price VS Milage":
                 bivariate_relation_plot(filtered_df, 'mileage', 'price', num_bins=10)
-            if "Price VS HP" in chosen_plot:
+            elif chosen_plot == "Price VS HP":
                 bivariate_relation_plot(filtered_df, 'hp', 'price', num_bins=10)
-            if "Price VS Year" in chosen_plot:
+            elif chosen_plot == "Price VS Year":
                 bivariate_relation_plot(filtered_df, 'year', 'price', num_bins=10)
-            if "Price VS Fuel Type" in chosen_plot:
+            elif chosen_plot == "Price VS Fuel Type":
                 number_sales_per_variable(filtered_df, 'fuel')
-            if "Price VS Gear" in chosen_plot:
+            elif chosen_plot == "Price VS Gear":
                 number_sales_per_variable(filtered_df, 'gear')
-            if "Price VS Offer Type" in chosen_plot:
+            elif chosen_plot == "Price VS Offer Type":
                 number_sales_per_variable(filtered_df, 'offerType')
             
 ###############################################################
