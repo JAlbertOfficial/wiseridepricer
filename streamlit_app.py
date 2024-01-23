@@ -117,13 +117,13 @@ def plot_best_selling_models(df, limit_selection):
     st.pyplot(fig)
 
 #--------------------------------------------------------------
-# Most expensive car makes
+# Most valuable car makes
 #--------------------------------------------------------------
 
-def plot_most_expensive_makes(df, limit_selection):
+def plot_most_valuable_makes(df, limit_selection):
     # Group by 'make' and calculate mean and standard deviation of prices
     top_price_makes = df.groupby('make')['price'].mean().sort_values(ascending=False).head(limit_selection)
-    top_price_std = df.groupby('make')['price'].std().sort_values(ascending=False).head(limit_selection)
+    top_price_models_std = df.groupby('make')['price'].std().sort_values(ascending=False).head(limit_selection)
 
     # Plot the bar chart
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -134,7 +134,30 @@ def plot_most_expensive_makes(df, limit_selection):
     ax.tick_params(axis='x', rotation=90)  # Rotate x-axis labels by 90 degrees
 
     # Add error bars to the bar chart
-    ax.errorbar(x=top_price_makes.index, y=top_price_makes.values, yerr=top_price_std.values, fmt='none', color='black', capsize=5)
+    ax.errorbar(x=top_price_makes.index, y=top_price_makes.values, yerr=top_price_models_std.values, fmt='none', color='black', capsize=5)
+
+    # Anzeigen der Abbildung
+    st.pyplot(fig)
+
+#--------------------------------------------------------------
+# Most valuable car models
+#--------------------------------------------------------------
+
+def plot_most_valuable_models(df, limit_selection):
+    # Group by 'make' and calculate mean and standard deviation of prices
+    top_price_models = df.groupby('model')['price'].mean().sort_values(ascending=False).head(limit_selection)
+    top_price_models_std = df.groupby('model')['price'].std().sort_values(ascending=False).head(limit_selection)
+
+    # Plot the bar chart
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.barplot(x=top_price_models.index, y=top_price_models.values, ax=ax, ci=None)
+    ax.set_title(f'Top {limit_selection} Most Valuable Car Models')
+    ax.set_ylabel('Mean Price (€)')
+    ax.set_xlabel('')
+    ax.tick_params(axis='x', rotation=90)  # Rotate x-axis labels by 90 degrees
+
+    # Add error bars to the bar chart
+    ax.errorbar(x=top_price_models.index, y=top_price_models.values, yerr=top_price_models_std.values, fmt='none', color='black', capsize=5)
 
     # Anzeigen der Abbildung
     st.pyplot(fig)
@@ -188,7 +211,9 @@ def eda_visualization():
         elif chosen_option == "Best-Selling Models":
             plot_best_selling_models(df_raw, limit_selection)
         elif chosen_option == "Most valuable car makes":
-            plot_most_expensive_makes(df_raw, limit_selection)
+            plot_most_valuable_makes(df_raw, limit_selection)
+        elif chosen_option == "Most valuable car models":
+            plot_most_valuable_models(df_raw, limit_selection)
 
 # Annahme: df_raw und limit_selection wurden zuvor definiert
 eda_visualization() 
