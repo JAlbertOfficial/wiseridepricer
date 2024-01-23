@@ -172,7 +172,7 @@ def plot_correlation_heatmap(df):
     st.pyplot(fig) 
 
 #--------------------------------------------------------------
-# Bivariate 
+# Bivariate relationships
 #--------------------------------------------------------------
         
 def bivariate_relation_plot(df, x_col, y_col, num_bins=10):
@@ -215,13 +215,16 @@ def bivariate_relation_plot(df, x_col, y_col, num_bins=10):
     # Zeige den Plot an
     st.pyplot(fig)  # Verwenden Sie st.pyplot statt plt.show()
 
-#####################
-    
 #--------------------------------------------------------------
-# Best Selling Makes
+# Number of Sales per variable
 #--------------------------------------------------------------
 
-def plot_best_selling_makes(df, limit_selection):
+import streamlit as st
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+
+def number_sales_per_variable(df, v):
     dfs = []
 
     # Iterate over non-numeric columns
@@ -238,19 +241,37 @@ def plot_best_selling_makes(df, limit_selection):
     # Concatenate all DataFrames in the list
     counts_df = pd.concat(dfs, ignore_index=True)
 
-    fig, ax = plt.subplots(figsize=(12, 6))
-    # Create a barplot for the current variable
-    sns.barplot(x='Level', y='Count', data=counts_df[counts_df["Variable"] == "fuel"], ax=ax)
-    ax.set_title(f'Top {limit_selection} Number of Sales per Fuel Type')
-    ax.set_xlabel('Car Make')
-    ax.set_ylabel('Number of Sales')
+    # Erstelle Subplots
+    fig, axs = plt.subplots(1, 2, figsize=(18, 6))
+
+    # Plot 1: Mean +- Standardabweichung der Variable "price"
+    # Hier nehmen wir an, dass "price" eine numerische Variable ist
+    price_stats = df.groupby(v)['price'].agg(['mean', 'std']).reset_index()
+
+    # Manuell erstellte x-Achse
+    x_values = list(range(len(price_stats)))
+
+    sns.barplot(x=x_values, y=price_stats['mean'], ci='sd', ax=axs[0])
+    axs[0].set_title(f'Mean Price for each {v.title()}')
+    axs[0].set_xlabel(f'{v.title()}')
+    axs[0].set_ylabel('Price')
+    axs[0].set_xticks(x_values)
+    axs[0].set_xticklabels(price_stats[v])
+
+    # Füge die Fehlerbalken separat hinzu
+    axs[0].errorbar(x=x_values, y=price_stats['mean'], yerr=price_stats['std'], fmt='none', color='black', capsize=5)
+    axs[0].set_xticklabels(axs[0].get_xticklabels(), rotation=90, ha='right')
+
+    # Plot 2: Number of Sales per Variable
+    sns.barplot(x='Level', y='Count', data=counts_df[counts_df["Variable"] == v], ax=axs[1])
+    axs[1].set_title(f'Number of Sales per {v.title()} Type')
+    axs[1].set_xlabel(f'{v.title()}')
+    axs[1].set_ylabel('Number of Sales')
     # Rotate x-axis labels for better readability
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha='right')
+    axs[1].set_xticklabels(axs[1].get_xticklabels(), rotation=90, ha='right')
 
     # Anzeigen der Abbildung
     st.pyplot(fig)
-
-
 
 #==============================================================
 # EDA page 
@@ -338,6 +359,12 @@ def eda_visualization():
                 bivariate_relation_plot(filtered_df, 'hp', 'price', num_bins=10)
             if "Price VS Year" in chosen_plot:
                 bivariate_relation_plot(filtered_df, 'year', 'price', num_bins=10)
+            if "Price VS Fuel Type" in chosen_plot:
+                number_sales_per_variable(filtered_df, 'fuel')
+            if "Price VS Gear" in chosen_plot:
+                number_sales_per_variable(filtered_df, 'gear')
+            if "Price VS Offer Type" in chosen_plot:
+                number_sales_per_variable(filtered_df, 'offerType')
             
 ###############################################################
 # Modelling
