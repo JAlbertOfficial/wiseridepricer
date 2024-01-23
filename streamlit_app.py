@@ -78,7 +78,35 @@ def plot_best_selling_makes(df, limit_selection):
 
     # Anzeigen der Abbildung
     st.pyplot(fig)
-    
+
+def plot_best_selling_models(df, limit_selection):
+    dfs = []
+
+    # Iterate over non-numeric columns
+    for column in df.columns:
+        # Count the occurrences of each level
+        counts = df[column].value_counts().reset_index()
+        # Rename columns for consistency
+        counts.columns = ['Level', 'Count']
+        # Add a new column for the variable name
+        counts['Variable'] = column
+        # Append the counts DataFrame to the list
+        dfs.append(counts)
+
+    # Concatenate all DataFrames in the list
+    counts_df = pd.concat(dfs, ignore_index=True)
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    # Create a barplot for the current variable
+    sns.barplot(x='Level', y='Count', data=counts_df[counts_df["Variable"] == "model"].head(limit_selection), ax=ax)
+    ax.set_title(f'Top {limit_selection} Best-Selling Car Models')
+    ax.set_xlabel('Car Model')
+    ax.set_ylabel('Number of Sales')
+    # Rotate x-axis labels for better readability
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha='right')
+
+    # Anzeigen der Abbildung
+    st.pyplot(fig)
 
 #==============================================================
 # EDA page 
@@ -126,6 +154,8 @@ def eda_visualization():
     if st.button("Plot it"):
         if chosen_option == "Best-Selling Makes":
             plot_best_selling_makes(df_raw, limit_selection)
+        elif chosen_option == "Best-Selling Models":
+            plot_best_selling_models(df_raw, limit_selection)
 
 # Annahme: df_raw und limit_selection wurden zuvor definiert
 eda_visualization() 
