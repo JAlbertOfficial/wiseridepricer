@@ -175,6 +175,7 @@ def plot_correlation_heatmap(df):
 # EDA page 
 #==============================================================
     
+
 def eda_visualization():
     st.title("Explorative Data Analysis")
     st.write("""
@@ -193,27 +194,48 @@ def eda_visualization():
         limit_selection = st.slider("Limit selection to (Max 50)", min_value=1, max_value=50, value=10)
 
     if chosen_option == "Relationship between car prices and car features":
-        # Select Box für "Chose makes to be included"
-        chosen_make = st.selectbox("Chose makes to be included", ["All makes"] + list(df_raw["make"].unique()))
+        # Multiselect für "Chose makes to be included"
+        chosen_makes = st.multiselect("Chose makes to be included", ["All"] + list(df_raw["make"].unique()), default=["All"])
 
-        if chosen_make == "All makes":
-            # Select Box für "Chose plot" (Option: "All makes")
-            chosen_plot_all_makes = st.selectbox("Chose plot", ["Correlation between all variables", "Price VS Milage",
-                                                                "Price VS Fuel Type", "Price VS Gear", "Price VS Offer Type",
-                                                                "Price VS HP", "Price VS Year"])
-        else:
-            # Select Box für "Chose models to be included" (Option: specific make)
-            chosen_model = st.selectbox("Chose models to be included", ["All models"] + list(df_raw[df_raw["make"] == chosen_make]["model"].unique()))
+        # Multiselect für "Chose models to be included"
+        chosen_models = st.multiselect("Chose models to be included", ["All"] + list(df_raw["model"].unique()), default=["All"])
 
-            if chosen_model == "All models":
-                # Select Box für "Chose plot" (Option: "All models")
-                chosen_plot_all_models = st.selectbox("Chose plot", ["Correlation between all variables", "Price VS Milage",
-                                                                    "Price VS Fuel Type", "Price VS Gear", "Price VS Offer Type",
-                                                                    "Price VS HP", "Price VS Year"])
-            else:
-                # Select Box für "Chose plot" (Option: specific model)
-                chosen_plot_specific_model = st.selectbox("Chose plot", ["Price VS Milage", "Price VS Fuel Type", "Price VS Gear",
-                                                                         "Price VS Offer Type", "Price VS HP", "Price VS Year"])
+        # Multiselect für "Chose fuel types to be included"
+        chosen_fuels = st.multiselect("Chose fuel types to be included", ["All"] + list(df_raw["fuel"].unique()), default=["All"])
+
+        # Multiselect für "Chose gear types to be included"
+        chosen_gears = st.multiselect("Chose gear types to be included", ["All"] + list(df_raw["gear"].unique()), default=["All"])
+
+        # Multiselect für "Chose offer types to be included"
+        chosen_offers = st.multiselect("Chose offer types to be included", ["All"] + list(df_raw["offerType"].unique()), default=["All"])
+
+        # Slider für "Select mileage range"
+        mileage_range = st.slider("Select mileage range", min_value=df_raw["mileage"].min(), max_value=df_raw["mileage"].max(), value=(df_raw["mileage"].min(), df_raw["mileage"].max()))
+
+        # Slider für "Select price range"
+        price_range = st.slider("Select price range", min_value=df_raw["price"].min(), max_value=df_raw["price"].max(), value=(df_raw["price"].min(), df_raw["price"].max()))
+
+        # Slider für "Select hp range"
+        hp_range = st.slider("Select hp range", min_value=df_raw["hp"].min(), max_value=df_raw["hp"].max(), value=(df_raw["hp"].min(), df_raw["hp"].max()))
+
+        # Slider für "Select year range"
+        year_range = st.slider("Select year range", min_value=df_raw["year"].min(), max_value=df_raw["year"].max(), value=(df_raw["year"].min(), df_raw["year"].max()))
+
+        # Multiselect für "Chose plot type"
+        chosen_plot = st.multiselect("Chose plot type", ["Correlation heatmap", "Price VS Milage", "Price VS Fuel Type", "Price VS Gear", "Price VS Offer Type", "Price VS HP", "Price VS Year"], default=["Correlation heatmap"])
+    
+        # Erzeugen Sie ein Subset des DataFrame basierend auf den ausgewählten Filtern
+        filtered_df = df_raw[
+            (df_raw["make"].isin(chosen_makes) if "All" not in chosen_makes else True) &
+            (df_raw["model"].isin(chosen_models) if "All" not in chosen_models else True) &
+            (df_raw["fuel"].isin(chosen_fuels) if "All" not in chosen_fuels else True) &
+            (df_raw["gear"].isin(chosen_gears) if "All" not in chosen_gears else True) &
+            (df_raw["offerType"].isin(chosen_offers) if "All" not in chosen_offers else True) &
+            (df_raw["mileage"].between(mileage_range[0], mileage_range[1])) &
+            (df_raw["price"].between(price_range[0], price_range[1])) &
+            (df_raw["hp"].between(hp_range[0], hp_range[1])) &
+            (df_raw["year"].between(year_range[0], year_range[1]))
+        ]
 
     if st.button("Plot it"):
         if chosen_option == "Best-Selling Makes":
@@ -225,13 +247,11 @@ def eda_visualization():
         elif chosen_option == "Most valuable car models":
             plot_most_valuable_models(df_raw, limit_selection)
         elif chosen_option == "Relationship between car prices and car features":
-            if chosen_make == "All makes" and chosen_plot_all_makes == "Correlation between all variables":
-                plot_correlation_heatmap(df_raw)
-                
-            elif chosen_make != "All makes" and chosen_model == "All models" and chosen_plot_all_models == "Correlation between all variables":
-                plot_correlation_heatmap(df_raw[df_raw["make"]==chosen_make])         
-
-
+            if "Correlation heatmap" in chosen_plot:
+                if filtered_df.empty:
+                    st.warning("No data available for the selected filters. Please adjust your selection.")
+                else:
+                    plot_correlation_heatmap(filtered_df)
 
 
 ###############################################################
