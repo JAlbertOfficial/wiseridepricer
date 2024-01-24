@@ -25,7 +25,7 @@ df_raw = pd.read_csv(path)
 ###############################################################
 
 def home():
-    st.title("WiseRidePricer - Explore the Automotive Market")
+    st.title("Wise-Ride-Pricer - Find the Best Price for Your Car")
     st.write("""
         Explore the full potential of the cutting-edge Streamlit app WiseRidePricer designed to revolutionize your car buying and selling experience! 
         Dive into a world of comprehensive data analysis and captivating visualizations derived from a rich dataset sourced from Autoscout24. 
@@ -366,7 +366,7 @@ def eda_visualization():
     Returns:
     - None
     """
-    st.title("Explorative Data Analysis")
+    st.title("Explore the German Car Market")
     st.write("""
         Welcome to the heart of WiseRidePricer's data exploration journey!
         Unleash the power of data visualization to uncover hidden insights and trends in the German automotive market.
@@ -488,22 +488,21 @@ def eda_visualization():
                     number_sales_per_variable(filtered_df, 'offerType')
             
 ###############################################################
-# Modelling
+# Modelling and Prediction
 ###############################################################    
 
-# Modelling Page
-def modelling():
-    st.title("Modelling")
-    # Hier fügen Sie den Code für Seite 3 ein
-
-###############################################################
-# Prediction
-###############################################################    
-
-# Prediction Page
 def prediction():
-    st.title("Prediction")
-    # Hier fügen Sie den Code für Seite 4 ein
+    st.title("Find the Perfect Price for Your Car")
+
+    # Einleitungstext
+    st.write("""
+    Welcome to the WiseRidePricer modelling section! 
+    Our advanced Machine Learning algorithm is here to help you find the perfect price for your car. 
+    Based on the information you provide about your car, our algorithm will predict an optimal price range 
+    by testing and evaluating a variety of models. Please enter the details of your car below, and 
+    we'll provide you with a predicted price range along with information about the optimized model, 
+    including model name, accuracy, error, and more.
+    """)
 
 ###############################################################
 # Navigation
