@@ -446,48 +446,46 @@ def eda_visualization():
 
     # Button to trigger the plot
     if st.button("Plot it"):         
-        if chosen_option == "Best-Selling Makes":
-            # Call function to plot the best-selling car makes
-            plot_best_selling_makes(df_raw, limit_selection)
-        elif chosen_option == "Best-Selling Models":
-            # Call function to plot the best-selling car models
-            plot_best_selling_models(df_raw, limit_selection)
-        elif chosen_option == "Most valuable car makes":
-            # Call function to plot the most valuable car makes
-            plot_most_valuable_makes(df_raw, limit_selection)
-        elif chosen_option == "Most valuable car models":
-            # Call function to plot the most valuable car models
-            plot_most_valuable_models(df_raw, limit_selection)
-        elif chosen_option == "Relationship between car prices and car features":
-            # Check the selected plot type
-            if chosen_plot == "Correlation heatmap":
-                # Check if the filtered DataFrame is empty
-                if filtered_df.empty:
-                    # Display a warning message if no data is available for the selected filters
-                    st.warning("No data available for the selected filters. Please adjust your selection.")
-                else:
+        # Check if the filtered DataFrame is empty
+        if filtered_df.empty:
+            # Display a warning message if no data is available for the selected filters
+            st.warning("No data available for the selected filters. Please adjust your selection.")
+        else:
+            if chosen_option == "Best-Selling Makes":
+                # Call function to plot the best-selling car makes
+                plot_best_selling_makes(df_raw, limit_selection)
+            elif chosen_option == "Best-Selling Models":
+                # Call function to plot the best-selling car models
+                plot_best_selling_models(df_raw, limit_selection)
+            elif chosen_option == "Most valuable car makes":
+                # Call function to plot the most valuable car makes
+                plot_most_valuable_makes(df_raw, limit_selection)
+            elif chosen_option == "Most valuable car models":
+                # Call function to plot the most valuable car models
+                plot_most_valuable_models(df_raw, limit_selection)
+            elif chosen_option == "Relationship between car prices and car features":
+                # Check the selected plot type
+                if chosen_plot == "Correlation heatmap":
                     # Call function to plot the correlation heatmap
                     plot_correlation_heatmap(filtered_df)
-            elif chosen_plot == "Price VS Milage":
-                # Call function to plot the bivariate relation between price and mileage
-                bivariate_relation_plot(filtered_df, 'mileage', 'price', num_bins=10)
-            elif chosen_plot == "Price VS HP":
-                # Call function to plot the bivariate relation between price and horsepower
-                bivariate_relation_plot(filtered_df, 'hp', 'price', num_bins=10)
-            elif chosen_plot == "Price VS Year":
-                # Call function to plot the bivariate relation between price and year
-                bivariate_relation_plot(filtered_df, 'year', 'price', num_bins=10)
-            elif chosen_plot == "Price VS Fuel Type":
-                # Call function to plot the number of sales per fuel type
-                number_sales_per_variable(filtered_df, 'fuel')
-            elif chosen_plot == "Price VS Gear":
-                # Call function to plot the number of sales per gear type
-                number_sales_per_variable(filtered_df, 'gear')
-            elif chosen_plot == "Price VS Offer Type":
-                # Call function to plot the number of sales per offer type
-                number_sales_per_variable(filtered_df, 'offerType')
-
-
+                elif chosen_plot == "Price VS Milage":
+                    # Call function to plot the bivariate relation between price and mileage
+                    bivariate_relation_plot(filtered_df, 'mileage', 'price', num_bins=10)
+                elif chosen_plot == "Price VS HP":
+                    # Call function to plot the bivariate relation between price and horsepower
+                    bivariate_relation_plot(filtered_df, 'hp', 'price', num_bins=10)
+                elif chosen_plot == "Price VS Year":
+                    # Call function to plot the bivariate relation between price and year
+                    bivariate_relation_plot(filtered_df, 'year', 'price', num_bins=10)
+                elif chosen_plot == "Price VS Fuel Type":
+                    # Call function to plot the number of sales per fuel type
+                    number_sales_per_variable(filtered_df, 'fuel')
+                elif chosen_plot == "Price VS Gear":
+                    # Call function to plot the number of sales per gear type
+                    number_sales_per_variable(filtered_df, 'gear')
+                elif chosen_plot == "Price VS Offer Type":
+                    # Call function to plot the number of sales per offer type
+                    number_sales_per_variable(filtered_df, 'offerType')
             
 ###############################################################
 # Modelling
