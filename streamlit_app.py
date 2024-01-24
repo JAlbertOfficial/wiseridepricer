@@ -23,17 +23,23 @@ df_raw = pd.read_csv(path)
 ###############################################################
 # Home Page
 ###############################################################
-    
+
 def home():
     st.title("WiseRidePricer - Explore the Automotive Market")
     st.write("""
         Explore the full potential of the cutting-edge Streamlit app WiseRidePricer designed to revolutionize your car buying and selling experience! 
         Dive into a world of comprehensive data analysis and captivating visualizations derived from a rich dataset sourced from Autoscout24. 
-        ...
+        Uncover total sales figures, discern dominant brands, unravel feature correlations, and delve into temporal shifts within the automotive market. 
+        Embark on a data-driven journey with this app, where you have a plethora of regression methods at your fingertips. Predicting sales prices becomes a breeze 
+        as you select and analyze specific car characteristics. WiseRidePricer goes beyond predictions - it empowers you with model evaluation metrics, aiding in 
+        performance assessment and assisting you in choosing the optimal model for your needs. Experience the ultimate in user-friendly interfaces with a 
+        streamlined dashboard. An intuitive platform that not only effectively communicates intricate results but also forecasts prices based on your chosen models 
+        is available. Elevate your car-related decisions with this app - your go-to companion for informed choices in the dynamic world of automotive transactions.
     """)
     # Hier können Sie ein Bild oder ein Flowchart hinzufügen
     # st.image("path/to/image.png", use_column_width=True)
-    #st.button("Get Started")
+    # st.button("Get Started")
+
 
 ###############################################################
 # EDA
@@ -287,43 +293,43 @@ def eda_visualization():
     """)
 
     # Select Box für "What do you want to plot?"
-    chosen_option = st.selectbox("**What do you want to plot?**", ["Best-Selling Makes", "Best-Selling Models", "Most valuable car makes",
+    chosen_option = st.selectbox("What do you want to plot?", ["Best-Selling Makes", "Best-Selling Models", "Most valuable car makes",
                                                              "Most valuable car models", "Relationship between car prices and car features"])
 
     if chosen_option in ["Best-Selling Makes", "Best-Selling Models", "Most valuable car makes", "Most valuable car models"]:
         # Schieberegler für "Limit selection to (Max 50)"
-        limit_selection = st.slider("**Limit selection to (Max 50)**", min_value=1, max_value=50, value=10)
+        limit_selection = st.slider("Limit selection to (Max 50)", min_value=1, max_value=50, value=10)
 
     if chosen_option == "Relationship between car prices and car features":
         # Multiselect für "Chose makes to be included"
-        chosen_makes = st.multiselect("**Chose makes to be included**", ["All"] + list(df_raw["make"].unique()), default=["All"])
+        chosen_makes = st.multiselect("Chose makes to be included", ["All"] + list(df_raw["make"].unique()), default=["All"])
 
         # Multiselect für "Chose models to be included"
-        chosen_models = st.multiselect("**Chose models to be included**", ["All"] + list(df_raw["model"].unique()), default=["All"])
+        chosen_models = st.multiselect("Chose models to be included", ["All"] + list(df_raw["model"].unique()), default=["All"])
 
         # Multiselect für "Chose fuel types to be included"
-        chosen_fuels = st.multiselect("**Chose fuel types to be included**", ["All"] + list(df_raw["fuel"].unique()), default=["All"])
+        chosen_fuels = st.multiselect("Chose fuel types to be included", ["All"] + list(df_raw["fuel"].unique()), default=["All"])
 
         # Multiselect für "Chose gear types to be included"
-        chosen_gears = st.multiselect("**Chose gear types to be included**", ["All"] + list(df_raw["gear"].unique()), default=["All"])
+        chosen_gears = st.multiselect("Chose gear types to be included", ["All"] + list(df_raw["gear"].unique()), default=["All"])
 
         # Multiselect für "Chose offer types to be included"
-        chosen_offers = st.multiselect("**Chose offer types to be included**", ["All"] + list(df_raw["offerType"].unique()), default=["All"])
+        chosen_offers = st.multiselect("Chose offer types to be included", ["All"] + list(df_raw["offerType"].unique()), default=["All"])
 
         # Slider für "Select mileage range"
-        mileage_range = st.slider("**Select mileage range**", min_value=df_raw["mileage"].min(), max_value=df_raw["mileage"].max(), value=(df_raw["mileage"].min(), df_raw["mileage"].max()))
+        mileage_range = st.slider("Select mileage range", min_value=df_raw["mileage"].min(), max_value=df_raw["mileage"].max(), value=(df_raw["mileage"].min(), df_raw["mileage"].max()))
 
         # Slider für "Select price range"
-        price_range = st.slider("**Select price range**", min_value=df_raw["price"].min(), max_value=df_raw["price"].max(), value=(df_raw["price"].min(), df_raw["price"].max()))
+        price_range = st.slider("Select price range", min_value=df_raw["price"].min(), max_value=df_raw["price"].max(), value=(df_raw["price"].min(), df_raw["price"].max()))
 
         # Slider für "Select hp range"
-        hp_range = st.slider("**Select hp range**", min_value=df_raw["hp"].min(), max_value=df_raw["hp"].max(), value=(df_raw["hp"].min(), df_raw["hp"].max()))
+        hp_range = st.slider("Select hp range", min_value=df_raw["hp"].min(), max_value=df_raw["hp"].max(), value=(df_raw["hp"].min(), df_raw["hp"].max()))
 
         # Slider für "Select year range"
-        year_range = st.slider("**Select year range**", min_value=df_raw["year"].min(), max_value=df_raw["year"].max(), value=(df_raw["year"].min(), df_raw["year"].max()))
+        year_range = st.slider("Select year range", min_value=df_raw["year"].min(), max_value=df_raw["year"].max(), value=(df_raw["year"].min(), df_raw["year"].max()))
 
         # Selectbox für "Chose plot type" (einfache Selectbox statt Multiselect)
-        chosen_plot = st.selectbox("**Chose plot type**", ["Correlation heatmap", "Price VS Milage", "Price VS Fuel Type", "Price VS Gear", "Price VS Offer Type", "Price VS HP", "Price VS Year"], index=0)
+        chosen_plot = st.selectbox("Chose plot type", ["Correlation heatmap", "Price VS Milage", "Price VS Fuel Type", "Price VS Gear", "Price VS Offer Type", "Price VS HP", "Price VS Year"], index=0)
     
         # Erzeugen Sie ein Subset des DataFrame basierend auf den ausgewählten Filtern
         filtered_df = df_raw[
