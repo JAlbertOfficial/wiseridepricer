@@ -353,7 +353,7 @@ def number_sales_per_variable(df, v):
     st.pyplot(fig)
 
 #==============================================================
-# EDA page 
+# EDA display function 
 #==============================================================
     
 def eda_visualization():
@@ -491,10 +491,15 @@ def eda_visualization():
 # Modelling and Prediction
 ###############################################################    
 
+#==============================================================
+# Display function 
+#==============================================================
+                    
+# Modelling Page
 def prediction():
     st.title("Find the Perfect Price for Your Car")
 
-    # Einleitungstext
+    # Introduction text
     st.write("""
     Welcome to the WiseRidePricer modelling section! 
     Our advanced Machine Learning algorithm is here to help you find the perfect price for your car. 
@@ -502,7 +507,47 @@ def prediction():
     by testing and evaluating a variety of models. Please enter the details of your car below, and 
     we'll provide you with a predicted price range along with information about the optimized model, 
     including model name, accuracy, error, and more.
+
+    Please enter the information about your car below and click the "Price my Car!" button.
     """)
+
+    # Select boxes for Car Make, Car Model, Fuel Type, Gear, Offer Type
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    with col1:
+        chosen_make = st.selectbox("Car Make", ["Not Specified"] + list(df_raw["make"].unique()))
+
+    with col2:
+        chosen_model = st.selectbox("Car Model", ["Not Specified"] + list(df_raw["model"].unique()))
+
+    with col3:
+        chosen_fuel = st.selectbox("Fuel Type", ["Not Specified"] + list(df_raw["fuel"].unique()))
+
+    with col4:
+        chosen_gear = st.selectbox("Gear", ["Not Specified"] + list(df_raw["gear"].unique()))
+
+    with col5:
+        chosen_offer = st.selectbox("Offer Type", ["Not Specified"] + list(df_raw["offerType"].unique()))
+
+    # Input fields for Mileage, HP, Year of Construction
+    col6, col7, col8 = st.columns(3)
+
+    with col6:
+        mileage = st.number_input("Mileage", min_value=0, step=1)
+
+    with col7:
+        hp = st.number_input("HP", min_value=0, step=1)
+
+    with col8:
+        year = st.number_input("Year of Construction", min_value=df_raw["year"].min(), max_value=df_raw["year"].max(), step=1)
+
+    # Button to trigger the modeling
+    if st.button("Price my Car!"):
+        # The code for modeling will be inserted here once it's ready
+        pass
+
+
+
 
 ###############################################################
 # Navigation
