@@ -12,6 +12,7 @@ import numpy as np
 #from io import StringIO
 import warnings
 warnings.filterwarnings("ignore")
+import joblib
 
 from sklearn.preprocessing import PolynomialFeatures, OrdinalEncoder
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV
@@ -632,6 +633,18 @@ def create_input_dataframe(chosen_make, chosen_model, chosen_fuel, chosen_gear, 
     df_predict_processed_sub["offerType"] = (df_predict_processed_sub["offerType"] - X_sub_train["offerType"].min())/(X_sub_train["offerType"].max()-X_sub_train["offerType"].min())
 
     return df_predict_processed_full, df_predict_processed_sub
+
+#--------------------------------------------------------------
+# Load the models
+#--------------------------------------------------------------
+
+lasso_grid_full_model = joblib.load('./models/lasso_grid_full_model.pkl')
+lasso_grid_sub_model = joblib.load('./models/lasso_grid_sub_model.pkl')
+ridge_random_full_model = joblib.load('./models/ridge_random_full_model.pkl')
+ridge_grid_sub_model = joblib.load('./models/ridge_grid_sub_model.pkl')
+elastic_net_random_full_model = joblib.load('./models/elastic_net_random_full_model.pkl')
+elastic_net_random_sub_model = joblib.load('./models/elastic_net_random_sub_model.pkl')
+
 
 #==============================================================
 # Display function 
