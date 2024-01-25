@@ -461,27 +461,27 @@ def eda_visualization():
             (df_raw["hp"].between(hp_range[0], hp_range[1])) &
             (df_raw["year"].between(year_range[0], year_range[1]))
         ]
-
     # Button to trigger the plot
     if st.button("Plot it"):         
-        # Check if the filtered DataFrame is empty
-        if filtered_df.empty:
-            # Display a warning message if no data is available for the selected filters
-            st.warning("No data available for the selected filters. Please adjust your selection.")
-        else:
-            if chosen_option == "Best-Selling Makes":
-                # Call function to plot the best-selling car makes
-                plot_best_selling_makes(df_raw, limit_selection)
-            elif chosen_option == "Best-Selling Models":
-                # Call function to plot the best-selling car models
-                plot_best_selling_models(df_raw, limit_selection)
-            elif chosen_option == "Most valuable car makes":
-                # Call function to plot the most valuable car makes
-                plot_most_valuable_makes(df_raw, limit_selection)
-            elif chosen_option == "Most valuable car models":
-                # Call function to plot the most valuable car models
-                plot_most_valuable_models(df_raw, limit_selection)
-            elif chosen_option == "Relationship between car prices and car features":
+        # Check the selected option
+        if chosen_option == "Best-Selling Makes":
+            # Call function to plot the best-selling car makes
+            plot_best_selling_makes(df_raw, limit_selection)
+        elif chosen_option == "Best-Selling Models":
+            # Call function to plot the best-selling car models
+            plot_best_selling_models(df_raw, limit_selection)
+        elif chosen_option == "Most valuable car makes":
+            # Call function to plot the most valuable car makes
+            plot_most_valuable_makes(df_raw, limit_selection)
+        elif chosen_option == "Most valuable car models":
+            # Call function to plot the most valuable car models
+            plot_most_valuable_models(df_raw, limit_selection)
+        elif chosen_option == "Relationship between car prices and car features":
+            # Check if the filtered DataFrame is empty
+            if filtered_df.empty:
+                # Display a warning message if no data is available for the selected filters
+                st.warning("No data available for the selected filters. Please adjust your selection.")
+            else:
                 # Check the selected plot type
                 if chosen_plot == "Correlation heatmap":
                     # Call function to plot the correlation heatmap
