@@ -15,10 +15,15 @@ warnings.filterwarnings("ignore")
 
 from sklearn.preprocessing import PolynomialFeatures, OrdinalEncoder
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV
-from sklearn.metrics import mean_squared_error, root_mean_squared_error, r2_score
-
-
+from sklearn.metrics import mean_squared_error, mean_squared_error, r2_score
+from scipy import stats
+from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import PolynomialFeatures, OrdinalEncoder
+from sklearn.model_selection import train_test_split, KFold, GridSearchCV, RandomizedSearchCV
+from sklearn.metrics import mean_squared_error, r2_score
+from skopt import BayesSearchCV
 from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+
 #from sklearn.kernel_ridge import KernelRidge
 #from sklearn.tree import DecisionTreeRegressor
 #from sklearn.svm import SVR
@@ -31,9 +36,7 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
 # Data import
 ###############################################################
 
-path = "./data/raw/autoscout24.csv"
-
-df_raw = pd.read_csv(path)
+df_raw = pd.read_csv("./data/raw/autoscout24.csv")
 
 ###############################################################
 # Home Page
@@ -507,200 +510,146 @@ def eda_visualization():
 ############################################################### 
 
 #==============================================================
-# Data preprocessing and Feature engineering
-#==============================================================   
+# Load processed data sets
+#==============================================================
 
-#--------------------------------------------------------------
-# Step 1: Create 2 DataFrames
-#--------------------------------------------------------------
+df_processed_full = pd.read_csv("./data/processed/df_processed_full.csv")
+df_processed_sub = pd.read_csv("./data/processed/df_processed_sub.csv")
 
-df_interim_full = df_raw.copy()
-top5makes = df_raw['make'].value_counts().head(5).index
-df_interim_sub = df_raw[df_raw['make'].isin(top5makes)].copy()
 
-#--------------------------------------------------------------
-# Step 2: Remove missing entries
-#--------------------------------------------------------------
-
-df_interim_full.dropna(inplace=True, ignore_index=True)
-df_interim_sub.dropna(inplace=True, ignore_index=True)
-
-#--------------------------------------------------------------
-# Step 3: Identify target, and continuous, ordinal, and features columns
-#--------------------------------------------------------------
-
-target = ['price']
-continuous_features = ['mileage', 'hp', 'year']
-ordinal_features = ['offerType']
-nominal_features = ["make", "model", "fuel", "gear"]
-
-#--------------------------------------------------------------
-# Step 4: Ordinal Encoding for ordinal features
-#--------------------------------------------------------------
-
-offer_type_order = ['Used', "Employee's car", 'Demonstration', 'Pre-registered', 'New']
-ordinal_encoder = OrdinalEncoder(categories=[offer_type_order])
-
-# Create a DataFrame with the original 'offerType' column
-df_ordinal_full = pd.DataFrame(df_interim_full[ordinal_features])
-df_ordinal_sub = pd.DataFrame(df_interim_sub[ordinal_features])
-
-# Perform ordinal encoding and create a new DataFrame
-df_interim_full[ordinal_features] = ordinal_encoder.fit_transform(df_interim_full[ordinal_features])
-df_interim_sub[ordinal_features] = ordinal_encoder.fit_transform(df_interim_sub[ordinal_features])
-
-#--------------------------------------------------------------
-# Step 5: One Hot Encoding for nominal features
-#--------------------------------------------------------------
-
-if any(col in df_interim_full.columns for col in nominal_features):
-    # Create a new DataFrame with only the one-hot encoded columns
-    df_one_hot_full = pd.get_dummies(df_interim_full[nominal_features], columns=nominal_features, dtype=int)
-
-    # Drop the original nominal columns from the original DataFrame
-    df_interim_full = df_interim_full.drop(columns=nominal_features)
-
-    # Concatenate the original DataFrame without nominal columns and the new DataFrame with one-hot encoded columns
-    df_interim_full = pd.concat([df_interim_full, df_one_hot_full], axis=1)
-
-if any(col in df_interim_sub.columns for col in nominal_features):
-    # Create a new DataFrame with only the one-hot encoded columns
-    df_one_hot_sub = pd.get_dummies(df_interim_sub[nominal_features], columns=nominal_features, dtype=int)
-
-    # Drop the original nominal columns from the original DataFrame
-    df_interim_sub = df_interim_sub.drop(columns=nominal_features)
-
-    # Concatenate the original DataFrame without nominal columns and the new DataFrame with one-hot encoded columns
-    df_interim_sub = pd.concat([df_interim_sub, df_one_hot_sub], axis=1)
-
-#--------------------------------------------------------------
-# Step 6: Train Test Split
-#--------------------------------------------------------------
-
-X_full_train, X_full_test, y_full_train, y_full_test = train_test_split(df_interim_full.drop("price",axis=1), 
-                                                                        df_interim_full["price"], test_size = 0.2, random_state = 42)
-X_sub_train, X_sub_test, y_sub_train, y_sub_test = train_test_split(df_interim_sub.drop("price",axis=1), 
-                                                                        df_interim_sub["price"], test_size = 0.2, random_state = 42)
-
-#--------------------------------------------------------------
-# Step 7: Log Transformation of target
-#--------------------------------------------------------------
+#==============================================================
+# Modelling and prediction functions
+#==============================================================
     
-y_full_train = np.log1p(y_full_train)
-y_full_test = np.log1p(y_full_test)
-
-#y_full_train = np.log1p(y_full_train)
-#y_full_test = np.log1p(y_full_test)
-
 #--------------------------------------------------------------
-# Step 8: Cbrt Transformation of some features
+# Built dataframe from user inpu
 #--------------------------------------------------------------
 
-X_full_train[["mileage","hp"]] =  np.cbrt(X_full_train[["mileage","hp"]]) 
-X_sub_train[["mileage","hp"]] =  np.cbrt(X_sub_train[["mileage","hp"]]) 
+def create_input_dataframe(chosen_make, chosen_model, chosen_fuel, chosen_gear, chosen_offer, mileage, hp, year):
 
-X_full_test[["mileage","hp"]] =  np.cbrt(X_full_test[["mileage","hp"]]) 
-X_sub_test[["mileage","hp"]] =  np.cbrt(X_sub_test[["mileage","hp"]]) 
+    # Erstelle den Input DataFrame
+    input_data = {
+        'mileage': [mileage],
+        'make': [chosen_make],
+        'model': [chosen_model],
+        'fuel': [chosen_fuel],
+        'gear': [chosen_gear],
+        'offerType': [chosen_offer],
+        'price': [0],  # Der Preis ist vorerst auf 0 gesetzt, da dies das zu prognostizierende Attribut ist
+        'hp': [hp],
+        'year': [year]
+    }
+    input_df = pd.DataFrame(input_data)
 
-#--------------------------------------------------------------
-# Step 8: Normalize test and train date with minimum and maximum from train data to a range of 0 to 1
-#--------------------------------------------------------------
+    # Erstelle eine Kopie des raw Datensatzes
+    df_interim_full = df_raw.copy()
+    top5makes = df_raw['make'].value_counts().head(5).index
+    df_interim_sub = df_raw[df_raw['make'].isin(top5makes)].copy()
 
-normalize_columns = ["mileage", "hp", "year", "offerType"]
+    # Remove missing entries
+    df_interim_full.dropna(inplace=True, ignore_index=True)
+    df_interim_sub.dropna(inplace=True, ignore_index=True)
 
-minmax_values_full = pd.DataFrame({
-    'feature': normalize_columns,
-    'min': X_full_train[normalize_columns].min(),
-    'max': X_full_train[normalize_columns].max()
-})
+    # Füge input_df ans Ende von df_interim_full und df_interim_sub an
+    df_predict_interim_full = pd.concat([df_interim_full, input_df], ignore_index=True)
+    df_predict_interim_sub = pd.concat([df_interim_sub, input_df], ignore_index=True)
 
-minmax_values_sub = pd.DataFrame({
-    'feature': normalize_columns,
-    'min': X_sub_train[normalize_columns].min(),
-    'max': X_sub_train[normalize_columns].max()
-})
+    # Store target, and continuous, ordinal, and features columns in a list
+    target = ['price']
+    continuous_features = ['mileage', 'hp', 'year']
+    ordinal_features = ['offerType']
+    nominal_features = ["make", "model", "fuel", "gear"]
 
-# Normalisierungsfunktion
-def normalize_value(value, min_value, max_value):
-    return (value - min_value) / (max_value - min_value)
+    # Ordinal Encoding for ordinal features
+    offer_type_order = ['Used', "Employee's car", 'Demonstration', 'Pre-registered', 'New']
+    ordinal_encoder = OrdinalEncoder(categories=[offer_type_order])
 
-# Normalisiere die ausgewählten Spalten
-for feature in normalize_columns:
-    min_value = minmax_values_full[minmax_values_full['feature'] == feature]['min'].values[0]
-    max_value = minmax_values_full[minmax_values_full['feature'] == feature]['max'].values[0]
+    # Create a DataFrame with the original 'offerType' column
+    df_ordinal_full = pd.DataFrame(df_predict_interim_full[ordinal_features])
+    df_ordinal_sub = pd.DataFrame(df_predict_interim_sub[ordinal_features])
+
+    # Perform ordinal encoding and create a new DataFrame
+    df_predict_interim_full[ordinal_features] = ordinal_encoder.fit_transform(df_predict_interim_full[ordinal_features])
+    df_predict_interim_sub[ordinal_features] = ordinal_encoder.fit_transform(df_predict_interim_sub[ordinal_features])
+
+    # One Hot Encoding for nominal features
+
+    if any(col in df_predict_interim_full.columns for col in nominal_features):
+        # Create a new DataFrame with only the one-hot encoded columns
+        df_predict_one_hot_full = pd.get_dummies(df_predict_interim_full[nominal_features], columns=nominal_features, dtype=int)
+
+        # Drop the original nominal columns from the original DataFrame
+        df_predict_interim_full = df_predict_interim_full.drop(columns=nominal_features)
+
+        # Concatenate the original DataFrame without nominal columns and the new DataFrame with one-hot encoded columns
+        df_predict_interim_full = pd.concat([df_predict_interim_full, df_predict_one_hot_full], axis=1)
+
+    if any(col in df_predict_interim_sub.columns for col in nominal_features):
+        # Create a new DataFrame with only the one-hot encoded columns
+        df_predict_one_hot_sub = pd.get_dummies(df_predict_interim_sub[nominal_features], columns=nominal_features, dtype=int)
+
+        # Drop the original nominal columns from the original DataFrame
+        df_predict_interim_sub = df_predict_interim_sub.drop(columns=nominal_features)
+
+        # Concatenate the original DataFrame without nominal columns and the new DataFrame with one-hot encoded columns
+        df_predict_interim_sub = pd.concat([df_predict_interim_sub, df_predict_one_hot_sub], axis=1)
+
+    # seperate row containing input user data from processed data
+    df_processed_full = df_predict_interim_full.iloc[:-1]
+    df_processed_sub = df_predict_interim_sub.iloc[:-1]
+
+    df_predict_processed_full = df_predict_interim_full.tail(1).copy()
+    df_predict_processed_sub = df_predict_interim_sub.tail(1).copy()
+
+    # drop price variable
+    df_predict_processed_full.drop("price", axis =1, inplace=True)
+    df_predict_processed_sub.drop("price", axis =1, inplace=True)
+        
+    # Cbrt Transformation of some features
     
-    X_full_train[feature] = X_full_train[feature].apply(lambda x: normalize_value(x, min_value, max_value))
+    df_predict_processed_full[["mileage","hp"]] =  np.cbrt(df_predict_processed_full[["mileage","hp"]]) 
+    df_predict_processed_sub[["mileage","hp"]] =  np.cbrt(df_predict_processed_sub[["mileage","hp"]]) 
 
-# Normalisiere die ausgewählten Spalten
-for feature in normalize_columns:
-    min_value = minmax_values_sub[minmax_values_sub['feature'] == feature]['min'].values[0]
-    max_value = minmax_values_sub[minmax_values_sub['feature'] == feature]['max'].values[0]
+    # Train Test Split (required to get maximum and minimum values of training data for normalization of user input data)
+    X_full_train, X_full_test, y_full_train, y_full_test = train_test_split(df_processed_full.drop("price",axis=1), 
+                                                                            df_processed_full["price"], test_size = 0.2, random_state = 42)
+    X_sub_train, X_sub_test, y_sub_train, y_sub_test = train_test_split(df_processed_sub.drop("price",axis=1), 
+                                                                            df_processed_sub["price"], test_size = 0.2, random_state = 42)
     
-    X_sub_train[feature] = X_sub_train[feature].apply(lambda x: normalize_value(x, min_value, max_value))
+    # Normalize test and train date with minimum and maximum from train data to a range of 0 to 1
+    #normalize_columns = ["mileage", "hp", "year", "offerType"]
 
-#--------------------------------------------------------------
-# Step 7a: Modelling: Linear Regression Model
-#--------------------------------------------------------------
+    #minmax_values_full = pd.DataFrame({
+    #    'feature': normalize_columns,
+    #    'min': X_full_train[normalize_columns].min(),
+    #    'max': X_full_train[normalize_columns].max()
+    #})
 
-lm_full = LinearRegression()
-lm_sub = LinearRegression()
+    #minmax_values_sub = pd.DataFrame({
+    #    'feature': normalize_columns,
+    #    'min': X_sub_train[normalize_columns].min(),
+    #    'max': X_sub_train[normalize_columns].max()
+    #})
 
-lm_full.fit(X_full_train, y_full_train)
-lm_sub.fit(X_sub_train, y_sub_train)
+    # Normalize function
+    #def normalize_value(value, min_value, max_value):
+    #    return (value - min_value) / (max_value - min_value)
 
-lm_y_full_pred = lm_full.predict(X_full_test)
-lm_y_sub_pred = lm_sub.predict(X_sub_test)
+    # Normalize training features in full data
+    #for feature in normalize_columns:
+    #    min_value = minmax_values_full[minmax_values_full['feature'] == feature]['min'].values[0]
+    #    max_value = minmax_values_full[minmax_values_full['feature'] == feature]['max'].values[0]
+    #    
+    #    df_predict_processed_full[feature] = df_predict_processed_full[feature].apply(lambda x: normalize_value(x, min_value, max_value))
 
-# Evaluation metrics for Full Dataset
-#lm_mse_full = mean_squared_error(y_full_test, np.expm1(lm_y_full_pred))
-#lm_rmse_full = np.sqrt(lm_mse_full)
-#lm_r2_full = r2_score(y_full_test, np.expm1(lm_y_full_pred))
+    # Normalize training features in subset data
+    #for feature in normalize_columns:
+    #    min_value = minmax_values_sub[minmax_values_sub['feature'] == feature]['min'].values[0]
+    #    max_value = minmax_values_sub[minmax_values_sub['feature'] == feature]['max'].values[0]
+        
+    #    df_predict_processed_sub[feature] = df_predict_processed_sub[feature].apply(lambda x: normalize_value(x, min_value, max_value))
 
-#--------------------------------------------------------------
-# Step 7a: Modelling: Linear Regression Model
-#--------------------------------------------------------------
-
-#kfolds = KFold(n_splits=10, shuffle=True, random_state=42)
-#alphas_alt = [14.5, 14.6, 14.7, 14.8, 14.9, 15, 15.1, 15.2, 15.3, 15.4, 15.5]
-#alphas2 = [5e-05, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007, 0.0008]
-#e_alphas = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007]
-#e_l1ratio = [0.8, 0.85, 0.9, 0.95, 0.99, 1]
-
-
-
-#RidgeCV(alphas=alphas_alt, cv=kfolds)
-#LassoCV(max_iter=1e7, alphas=alphas2, random_state=42, cv=kfolds))
-#ElasticNetCV(max_iter=1e7, alphas=e_alphas, cv=kfolds, l1_ratio=e_l1ratio)
-#SVR(C= 20, epsilon= 0.008, gamma=0.0003)
-#gbr = GradientBoostingRegressor(n_estimators=3000, learning_rate=0.05, max_depth=4, max_features='sqrt', min_samples_leaf=15, min_samples_split=10, loss='huber', random_state =42)                     
-#lightgbm = LGBMRegressor(objective='regression', 
-#                                       num_leaves=4,
-#                                       learning_rate=0.01, 
-#                                       n_estimators=5000,
-#                                       max_bin=200, 
-#                                       bagging_fraction=0.75,
-#                                      bagging_freq=5, 
-#                                       bagging_seed=7,
-#                                       feature_fraction=0.2,
-#                                       feature_fraction_seed=7,
-#                                       verbose=-1,
-#                                       )
-
-#xgboost = XGBRegressor(learning_rate=0.01,n_estimators=3460,
-#                                     max_depth=3, min_child_weight=0,
-#                                     gamma=0, subsample=0.7,
-#                                     colsample_bytree=0.7,
-#                                     objective='reg:linear', nthread=-1,
-#                                     scale_pos_weight=1, seed=27,
-#                                     reg_alpha=0.00006)
-
-
-#stack_gen = StackingCVRegressor(regressors=(ridge, lasso, elasticnet, gbr, xgboost, lightgbm),
-#                                meta_regressor=xgboost,
-#                                use_features_in_secondary=True)
-
-
-
+    return df_predict_processed_full, df_predict_processed_sub
 
 #==============================================================
 # Display function 
@@ -726,19 +675,19 @@ def prediction():
     col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
-        chosen_make = st.selectbox("Car Make", ["Not Specified"] + list(df_raw["make"].unique()))
+        chosen_make = st.selectbox("Car Make", list(df_raw["make"].unique()))
 
     with col2:
-        chosen_model = st.selectbox("Car Model", ["Not Specified"] + list(df_raw["model"].unique()))
+        chosen_model = st.selectbox("Car Model", list(df_raw["model"].unique()))
 
     with col3:
-        chosen_fuel = st.selectbox("Fuel Type", ["Not Specified"] + list(df_raw["fuel"].unique()))
+        chosen_fuel = st.selectbox("Fuel Type", list(df_raw["fuel"].unique()))
 
     with col4:
-        chosen_gear = st.selectbox("Gear", ["Not Specified"] + list(df_raw["gear"].unique()))
+        chosen_gear = st.selectbox("Gear", list(df_raw["gear"].unique()))
 
     with col5:
-        chosen_offer = st.selectbox("Offer Type", ["Not Specified"] + list(df_raw["offerType"].unique()))
+        chosen_offer = st.selectbox("Offer Type", list(df_raw["offerType"].unique()))
 
     # Input fields for Mileage, HP, Year of Construction
     col6, col7, col8 = st.columns(3)
@@ -754,10 +703,12 @@ def prediction():
 
     # Button to trigger the modeling
     if st.button("Price my Car!"):
-        # The code for modeling will be inserted here once it's ready
-        pass
+        # Erstellung des Eingabedatensatzes aus den Benutzereingaben
+        df_predict_processed_full, df_predict_processed_sub = create_input_dataframe(chosen_make, chosen_model, chosen_fuel, chosen_gear, chosen_offer, mileage, hp, year)
 
-
+        # Anzeige des erstellten Datensatzes
+        st.write("Erstellter Datensatz:")
+        st.write(df_predict_processed_full, df_predict_processed_sub)
 
 
 ###############################################################
