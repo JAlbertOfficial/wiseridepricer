@@ -178,6 +178,16 @@ for feature in normalize_columns:
     
     X_sub_test[feature] = X_sub_test[feature].apply(lambda x: normalize_value(x, min_value, max_value))
 
+#--------------------------------------------------------------
+# Save processed train and test data
+#--------------------------------------------------------------   
 
+X_full_test.to_csv(os.path.join("./data/processed/", "X_full_test.csv"), index=False)
+X_sub_train.to_csv(os.path.join("./data/processed/", "X_full_train.csv"), index=False)
+y_full_test.to_csv(os.path.join("./data/processed/", "y_full_test.csv"), index=False)
+y_sub_train.to_csv(os.path.join("./data/processed/", "y_full_train.csv"), index=False)
 
-
+X_sub_test.to_csv(os.path.join("./data/processed/", "X_sub_test.csv"), index=False)
+X_sub_train.to_csv(os.path.join("./data/processed/", "X_sub_train.csv"), index=False)
+y_sub_test.to_csv(os.path.join("./data/processed/", "y_sub_test.csv"), index=False)
+y_sub_train.to_csv(os.path.join("./data/processed/", "y_sub_train.csv"), index=False)
