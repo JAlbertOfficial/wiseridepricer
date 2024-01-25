@@ -655,6 +655,39 @@ def predict_price(model, input_data):
     rounded_prediction = np.round(backtransformed_prediction, 0).astype(int)  # Round and convert to integer
     return rounded_prediction
 
+# Load the evaluation results datasets
+results_elastic_net = pd.read_csv('./models/model_evaluation/results_elastic_net.csv')
+results_lasso = pd.read_csv('./models/model_evaluation/results_lasso.csv')
+results_ridge = pd.read_csv('./models/model_evaluation/results_ridge.csv')
+
+# Create full evaluation table
+evaluation_full_data = pd.DataFrame({
+    'RMSE': [
+        results_lasso.iloc[2, 3],
+        results_ridge.iloc[1, 3],
+        results_elastic_net.iloc[1, 4]
+    ],
+    'R-Square': [
+        results_lasso.iloc[2, 4],
+        results_ridge.iloc[1, 4],
+        results_elastic_net.iloc[1, 5]
+    ]
+})
+
+# Create sub evaluation table
+evaluation_sub_data = pd.DataFrame({
+    'RMSE (Result)': [
+        results_lasso.iloc[5, 3],
+        results_ridge.iloc[5, 3],
+        results_elastic_net.iloc[4, 4]
+    ],
+    'R-Square (Result)': [
+        results_lasso.iloc[5, 4],
+        results_ridge.iloc[5, 4],
+        results_elastic_net.iloc[4, 5]
+    ]
+})
+
 #==============================================================
 # Display function 
 #==============================================================
@@ -718,20 +751,26 @@ def prediction():
         prediction_elastic_net_full = predict_price(elastic_net_random_full_model, df_predict_processed_full)
         prediction_elastic_net_sub = predict_price(elastic_net_random_sub_model, df_predict_processed_sub)
 
-        # Display predictions in tables with information text
-        st.write("**Predictions based on Full Data:**")
-        st.write("""
-        The predictions are based on the full dataset, which includes a wide range of car makes and models.
-        """)
+        # Combine evaluation data with prediction data for full data
         table_full_data = pd.DataFrame({
-            'Model': ['Lasso', 'Ridge', 'Elastic Net'],
-            'Predicted Price (€)': [
+            'Price': [
                 prediction_lasso_full[0],
                 prediction_ridge_full[0],
                 prediction_elastic_net_full[0]
+            ],
+            'Model': ['Lasso', 'Ridge', 'Elastic Net'],
+            'RMSE': [
+                evaluation_full_data.iloc[0, 0],
+                evaluation_full_data.iloc[1, 0],
+                evaluation_full_data.iloc[2, 0]
+            ],
+            'R-Square': [
+                evaluation_full_data.iloc[0, 1],
+                evaluation_full_data.iloc[1, 1],
+                evaluation_full_data.iloc[2, 1]
             ]
         })
-        table_full_data.index = [''] * len(table_full_data)  # Set empty string as index to hide it
+
         st.table(table_full_data)
 
         st.write("**Predictions based on Sub Data:**")
@@ -740,17 +779,28 @@ def prediction():
         If your car belongs to one of these 5 brands, the predictions based on the subset might be more accurate.
         Otherwise, consider the predictions based on the full dataset.
         """)
+
         table_sub_data = pd.DataFrame({
-            'Model': ['Lasso', 'Ridge', 'Elastic Net'],
-            'Predicted Price (€)': [
+            'Price': [
                 prediction_lasso_sub[0],
                 prediction_ridge_sub[0],
                 prediction_elastic_net_sub[0]
+            ],
+            'Model': ['Lasso', 'Ridge', 'Elastic Net'],
+            'RMSE': [
+                evaluation_sub_data.iloc[0, 0],
+                evaluation_sub_data.iloc[1, 0],
+                evaluation_sub_data.iloc[2, 0]
+            ],
+            'R-Square': [
+                evaluation_sub_data.iloc[0, 1],
+                evaluation_sub_data.iloc[1, 1],
+                evaluation_sub_data.iloc[2, 1]
             ]
         })
         table_sub_data.index = [''] * len(table_sub_data)  # Set empty string as index to hide it
         st.table(table_sub_data)
-        
+
 
 
 ###############################################################
