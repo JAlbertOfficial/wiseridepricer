@@ -616,38 +616,20 @@ def create_input_dataframe(chosen_make, chosen_model, chosen_fuel, chosen_gear, 
     X_sub_train, X_sub_test, y_sub_train, y_sub_test = train_test_split(df_processed_sub.drop("price",axis=1), 
                                                                             df_processed_sub["price"], test_size = 0.2, random_state = 42)
     
+    # Cbrt Transformation of some features (required for subsequent normalization step)
+    X_full_train[["mileage","hp"]] =  np.cbrt(X_full_train[["mileage","hp"]]) 
+    X_sub_train[["mileage","hp"]] =  np.cbrt(X_sub_train[["mileage","hp"]]) 
+    
     # Normalize test and train date with minimum and maximum from train data to a range of 0 to 1
-    #normalize_columns = ["mileage", "hp", "year", "offerType"]
+    df_predict_processed_full["mileage"] = (df_predict_processed_full["mileage"] - X_full_train["mileage"].min())/(X_full_train["mileage"].max()-X_full_train["mileage"].min())
+    df_predict_processed_full["hp"] = (df_predict_processed_full["hp"] - X_full_train["hp"].min())/(X_full_train["hp"].max()-X_full_train["hp"].min())
+    df_predict_processed_full["year"] = (df_predict_processed_full["year"] - X_full_train["year"].min())/(X_full_train["year"].max()-X_full_train["year"].min())
+    df_predict_processed_full["offerType"] = (df_predict_processed_full["offerType"] - X_full_train["offerType"].min())/(X_full_train["offerType"].max()-X_full_train["offerType"].min())
 
-    #minmax_values_full = pd.DataFrame({
-    #    'feature': normalize_columns,
-    #    'min': X_full_train[normalize_columns].min(),
-    #    'max': X_full_train[normalize_columns].max()
-    #})
-
-    #minmax_values_sub = pd.DataFrame({
-    #    'feature': normalize_columns,
-    #    'min': X_sub_train[normalize_columns].min(),
-    #    'max': X_sub_train[normalize_columns].max()
-    #})
-
-    # Normalize function
-    #def normalize_value(value, min_value, max_value):
-    #    return (value - min_value) / (max_value - min_value)
-
-    # Normalize training features in full data
-    #for feature in normalize_columns:
-    #    min_value = minmax_values_full[minmax_values_full['feature'] == feature]['min'].values[0]
-    #    max_value = minmax_values_full[minmax_values_full['feature'] == feature]['max'].values[0]
-    #    
-    #    df_predict_processed_full[feature] = df_predict_processed_full[feature].apply(lambda x: normalize_value(x, min_value, max_value))
-
-    # Normalize training features in subset data
-    #for feature in normalize_columns:
-    #    min_value = minmax_values_sub[minmax_values_sub['feature'] == feature]['min'].values[0]
-    #    max_value = minmax_values_sub[minmax_values_sub['feature'] == feature]['max'].values[0]
-        
-    #    df_predict_processed_sub[feature] = df_predict_processed_sub[feature].apply(lambda x: normalize_value(x, min_value, max_value))
+    df_predict_processed_sub["mileage"] = (df_predict_processed_sub["mileage"] - X_sub_train["mileage"].min())/(X_sub_train["mileage"].max()-X_sub_train["mileage"].min())
+    df_predict_processed_sub["hp"] = (df_predict_processed_sub["hp"] - X_sub_train["hp"].min())/(X_sub_train["hp"].max()-X_sub_train["hp"].min())
+    df_predict_processed_sub["year"] = (df_predict_processed_sub["year"] - X_sub_train["year"].min())/(X_sub_train["year"].max()-X_sub_train["year"].min())
+    df_predict_processed_sub["offerType"] = (df_predict_processed_sub["offerType"] - X_sub_train["offerType"].min())/(X_sub_train["offerType"].max()-X_sub_train["offerType"].min())
 
     return df_predict_processed_full, df_predict_processed_sub
 
