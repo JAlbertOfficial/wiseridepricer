@@ -7,10 +7,25 @@ from streamlit_option_menu import option_menu
 import pandas as pd
 import matplotlib.pyplot as plt 
 import seaborn as sns
+import numpy as np
 #import requests
 #from io import StringIO
 import warnings
 warnings.filterwarnings("ignore")
+
+from sklearn.preprocessing import PolynomialFeatures, OrdinalEncoder
+from sklearn.model_selection import train_test_split, KFold, GridSearchCV
+from sklearn.metrics import mean_squared_error, root_mean_squared_error, r2_score
+
+
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+#from sklearn.kernel_ridge import KernelRidge
+#from sklearn.tree import DecisionTreeRegressor
+#from sklearn.svm import SVR
+#from sklearn.neighbors import KNeighborsRegressor
+#from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, AdaBoostRegressor, GradientBoostingRegressor
+#from xgboost import XGBRegressor
+#from lightgbm import LGBMRegressor
 
 ###############################################################
 # Data import
@@ -489,7 +504,203 @@ def eda_visualization():
             
 ###############################################################
 # Modelling and Prediction
-###############################################################    
+############################################################### 
+
+#==============================================================
+# Data preprocessing and Feature engineering
+#==============================================================   
+
+#--------------------------------------------------------------
+# Step 1: Create 2 DataFrames
+#--------------------------------------------------------------
+
+df_interim_full = df_raw.copy()
+top5makes = df_raw['make'].value_counts().head(5).index
+df_interim_sub = df_raw[df_raw['make'].isin(top5makes)].copy()
+
+#--------------------------------------------------------------
+# Step 2: Remove missing entries
+#--------------------------------------------------------------
+
+df_interim_full.dropna(inplace=True, ignore_index=True)
+df_interim_sub.dropna(inplace=True, ignore_index=True)
+
+#--------------------------------------------------------------
+# Step 3: Identify target, and continuous, ordinal, and features columns
+#--------------------------------------------------------------
+
+target = ['price']
+continuous_features = ['mileage', 'hp', 'year']
+ordinal_features = ['offerType']
+nominal_features = ["make", "model", "fuel", "gear"]
+
+#--------------------------------------------------------------
+# Step 4: Ordinal Encoding for ordinal features
+#--------------------------------------------------------------
+
+offer_type_order = ['Used', "Employee's car", 'Demonstration', 'Pre-registered', 'New']
+ordinal_encoder = OrdinalEncoder(categories=[offer_type_order])
+
+# Create a DataFrame with the original 'offerType' column
+df_ordinal_full = pd.DataFrame(df_interim_full[ordinal_features])
+df_ordinal_sub = pd.DataFrame(df_interim_sub[ordinal_features])
+
+# Perform ordinal encoding and create a new DataFrame
+df_interim_full[ordinal_features] = ordinal_encoder.fit_transform(df_interim_full[ordinal_features])
+df_interim_sub[ordinal_features] = ordinal_encoder.fit_transform(df_interim_sub[ordinal_features])
+
+#--------------------------------------------------------------
+# Step 5: One Hot Encoding for nominal features
+#--------------------------------------------------------------
+
+if any(col in df_interim_full.columns for col in nominal_features):
+    # Create a new DataFrame with only the one-hot encoded columns
+    df_one_hot_full = pd.get_dummies(df_interim_full[nominal_features], columns=nominal_features, dtype=int)
+
+    # Drop the original nominal columns from the original DataFrame
+    df_interim_full = df_interim_full.drop(columns=nominal_features)
+
+    # Concatenate the original DataFrame without nominal columns and the new DataFrame with one-hot encoded columns
+    df_interim_full = pd.concat([df_interim_full, df_one_hot_full], axis=1)
+
+if any(col in df_interim_sub.columns for col in nominal_features):
+    # Create a new DataFrame with only the one-hot encoded columns
+    df_one_hot_sub = pd.get_dummies(df_interim_sub[nominal_features], columns=nominal_features, dtype=int)
+
+    # Drop the original nominal columns from the original DataFrame
+    df_interim_sub = df_interim_sub.drop(columns=nominal_features)
+
+    # Concatenate the original DataFrame without nominal columns and the new DataFrame with one-hot encoded columns
+    df_interim_sub = pd.concat([df_interim_sub, df_one_hot_sub], axis=1)
+
+#--------------------------------------------------------------
+# Step 6: Train Test Split
+#--------------------------------------------------------------
+
+X_full_train, X_full_test, y_full_train, y_full_test = train_test_split(df_interim_full.drop("price",axis=1), 
+                                                                        df_interim_full["price"], test_size = 0.2, random_state = 42)
+X_sub_train, X_sub_test, y_sub_train, y_sub_test = train_test_split(df_interim_sub.drop("price",axis=1), 
+                                                                        df_interim_sub["price"], test_size = 0.2, random_state = 42)
+
+#--------------------------------------------------------------
+# Step 7: Log Transformation of target
+#--------------------------------------------------------------
+    
+y_full_train = np.log1p(y_full_train)
+y_full_test = np.log1p(y_full_test)
+
+#y_full_train = np.log1p(y_full_train)
+#y_full_test = np.log1p(y_full_test)
+
+#--------------------------------------------------------------
+# Step 8: Cbrt Transformation of some features
+#--------------------------------------------------------------
+
+X_full_train[["mileage","hp"]] =  np.cbrt(X_full_train[["mileage","hp"]]) 
+X_sub_train[["mileage","hp"]] =  np.cbrt(X_sub_train[["mileage","hp"]]) 
+
+X_full_test[["mileage","hp"]] =  np.cbrt(X_full_test[["mileage","hp"]]) 
+X_sub_test[["mileage","hp"]] =  np.cbrt(X_sub_test[["mileage","hp"]]) 
+
+#--------------------------------------------------------------
+# Step 8: Normalize test and train date with minimum and maximum from train data to a range of 0 to 1
+#--------------------------------------------------------------
+
+normalize_columns = ["mileage", "hp", "year", "offerType"]
+
+minmax_values_full = pd.DataFrame({
+    'feature': normalize_columns,
+    'min': X_full_train[normalize_columns].min(),
+    'max': X_full_train[normalize_columns].max()
+})
+
+minmax_values_sub = pd.DataFrame({
+    'feature': normalize_columns,
+    'min': X_sub_train[normalize_columns].min(),
+    'max': X_sub_train[normalize_columns].max()
+})
+
+# Normalisierungsfunktion
+def normalize_value(value, min_value, max_value):
+    return (value - min_value) / (max_value - min_value)
+
+# Normalisiere die ausgewählten Spalten
+for feature in normalize_columns:
+    min_value = minmax_values_full[minmax_values_full['feature'] == feature]['min'].values[0]
+    max_value = minmax_values_full[minmax_values_full['feature'] == feature]['max'].values[0]
+    
+    X_full_train[feature] = X_full_train[feature].apply(lambda x: normalize_value(x, min_value, max_value))
+
+# Normalisiere die ausgewählten Spalten
+for feature in normalize_columns:
+    min_value = minmax_values_sub[minmax_values_sub['feature'] == feature]['min'].values[0]
+    max_value = minmax_values_sub[minmax_values_sub['feature'] == feature]['max'].values[0]
+    
+    X_sub_train[feature] = X_sub_train[feature].apply(lambda x: normalize_value(x, min_value, max_value))
+
+#--------------------------------------------------------------
+# Step 7a: Modelling: Linear Regression Model
+#--------------------------------------------------------------
+
+lm_full = LinearRegression()
+lm_sub = LinearRegression()
+
+lm_full.fit(X_full_train, y_full_train)
+lm_sub.fit(X_sub_train, y_sub_train)
+
+lm_y_full_pred = lm_full.predict(X_full_test)
+lm_y_sub_pred = lm_sub.predict(X_sub_test)
+
+# Evaluation metrics for Full Dataset
+#lm_mse_full = mean_squared_error(y_full_test, np.expm1(lm_y_full_pred))
+#lm_rmse_full = np.sqrt(lm_mse_full)
+#lm_r2_full = r2_score(y_full_test, np.expm1(lm_y_full_pred))
+
+#--------------------------------------------------------------
+# Step 7a: Modelling: Linear Regression Model
+#--------------------------------------------------------------
+
+#kfolds = KFold(n_splits=10, shuffle=True, random_state=42)
+#alphas_alt = [14.5, 14.6, 14.7, 14.8, 14.9, 15, 15.1, 15.2, 15.3, 15.4, 15.5]
+#alphas2 = [5e-05, 0.0001, 0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007, 0.0008]
+#e_alphas = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007]
+#e_l1ratio = [0.8, 0.85, 0.9, 0.95, 0.99, 1]
+
+
+
+#RidgeCV(alphas=alphas_alt, cv=kfolds)
+#LassoCV(max_iter=1e7, alphas=alphas2, random_state=42, cv=kfolds))
+#ElasticNetCV(max_iter=1e7, alphas=e_alphas, cv=kfolds, l1_ratio=e_l1ratio)
+#SVR(C= 20, epsilon= 0.008, gamma=0.0003)
+#gbr = GradientBoostingRegressor(n_estimators=3000, learning_rate=0.05, max_depth=4, max_features='sqrt', min_samples_leaf=15, min_samples_split=10, loss='huber', random_state =42)                     
+#lightgbm = LGBMRegressor(objective='regression', 
+#                                       num_leaves=4,
+#                                       learning_rate=0.01, 
+#                                       n_estimators=5000,
+#                                       max_bin=200, 
+#                                       bagging_fraction=0.75,
+#                                      bagging_freq=5, 
+#                                       bagging_seed=7,
+#                                       feature_fraction=0.2,
+#                                       feature_fraction_seed=7,
+#                                       verbose=-1,
+#                                       )
+
+#xgboost = XGBRegressor(learning_rate=0.01,n_estimators=3460,
+#                                     max_depth=3, min_child_weight=0,
+#                                     gamma=0, subsample=0.7,
+#                                     colsample_bytree=0.7,
+#                                     objective='reg:linear', nthread=-1,
+#                                     scale_pos_weight=1, seed=27,
+#                                     reg_alpha=0.00006)
+
+
+#stack_gen = StackingCVRegressor(regressors=(ridge, lasso, elasticnet, gbr, xgboost, lightgbm),
+#                                meta_regressor=xgboost,
+#                                use_features_in_secondary=True)
+
+
+
 
 #==============================================================
 # Display function 
