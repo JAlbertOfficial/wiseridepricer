@@ -523,12 +523,12 @@ df_processed_sub = pd.read_csv("./data/processed/df_processed_sub.csv")
 #==============================================================
     
 #--------------------------------------------------------------
-# Built dataframe from user inpu
+# Built dataframe from user input
 #--------------------------------------------------------------
 
 def create_input_dataframe(chosen_make, chosen_model, chosen_fuel, chosen_gear, chosen_offer, mileage, hp, year):
 
-    # Erstelle den Input DataFrame
+    # Create the input DataFrame
     input_data = {
         'mileage': [mileage],
         'make': [chosen_make],
@@ -536,13 +536,13 @@ def create_input_dataframe(chosen_make, chosen_model, chosen_fuel, chosen_gear, 
         'fuel': [chosen_fuel],
         'gear': [chosen_gear],
         'offerType': [chosen_offer],
-        'price': [0],  # Der Preis ist vorerst auf 0 gesetzt, da dies das zu prognostizierende Attribut ist
+        'price': [0], # The price is set to 0 for the time being, as this is the attribute to be predicted
         'hp': [hp],
         'year': [year]
     }
     input_df = pd.DataFrame(input_data)
 
-    # Erstelle eine Kopie des raw Datensatzes
+    # Create a copy of the raw data set
     df_interim_full = df_raw.copy()
     top5makes = df_raw['make'].value_counts().head(5).index
     df_interim_sub = df_raw[df_raw['make'].isin(top5makes)].copy()
@@ -551,7 +551,7 @@ def create_input_dataframe(chosen_make, chosen_model, chosen_fuel, chosen_gear, 
     df_interim_full.dropna(inplace=True, ignore_index=True)
     df_interim_sub.dropna(inplace=True, ignore_index=True)
 
-    # Füge input_df ans Ende von df_interim_full und df_interim_sub an
+    # Add input_df to the end of df_interim_full and df_interim_sub
     df_predict_interim_full = pd.concat([df_interim_full, input_df], ignore_index=True)
     df_predict_interim_sub = pd.concat([df_interim_sub, input_df], ignore_index=True)
 
@@ -574,7 +574,6 @@ def create_input_dataframe(chosen_make, chosen_model, chosen_fuel, chosen_gear, 
     df_predict_interim_sub[ordinal_features] = ordinal_encoder.fit_transform(df_predict_interim_sub[ordinal_features])
 
     # One Hot Encoding for nominal features
-
     if any(col in df_predict_interim_full.columns for col in nominal_features):
         # Create a new DataFrame with only the one-hot encoded columns
         df_predict_one_hot_full = pd.get_dummies(df_predict_interim_full[nominal_features], columns=nominal_features, dtype=int)
@@ -645,6 +644,16 @@ ridge_grid_sub_model = joblib.load('./models/ridge_grid_sub_model.pkl')
 elastic_net_random_full_model = joblib.load('./models/elastic_net_random_full_model.pkl')
 elastic_net_random_sub_model = joblib.load('./models/elastic_net_random_sub_model.pkl')
 
+#--------------------------------------------------------------
+# Predict and Evaluate
+#--------------------------------------------------------------
+
+# Predict using the loaded models
+def predict_price(model, input_data):
+    raw_prediction = model.predict(input_data)
+    backtransformed_prediction = np.expm1(raw_prediction)
+    rounded_prediction = np.round(backtransformed_prediction, 0).astype(int)  # Round and convert to integer
+    return rounded_prediction
 
 #==============================================================
 # Display function 
@@ -698,12 +707,50 @@ def prediction():
 
     # Button to trigger the modeling
     if st.button("Price my Car!"):
-        # Erstellung des Eingabedatensatzes aus den Benutzereingaben
+        # Creation of the input data record from the user input
         df_predict_processed_full, df_predict_processed_sub = create_input_dataframe(chosen_make, chosen_model, chosen_fuel, chosen_gear, chosen_offer, mileage, hp, year)
 
-        # Anzeige des erstellten Datensatzes
-        st.write("Erstellter Datensatz:")
-        st.write(df_predict_processed_full, df_predict_processed_sub)
+        # Predict using the loaded models
+        prediction_lasso_full = predict_price(lasso_grid_full_model, df_predict_processed_full)
+        prediction_lasso_sub = predict_price(lasso_grid_sub_model, df_predict_processed_sub)
+        prediction_ridge_full = predict_price(ridge_random_full_model, df_predict_processed_full)
+        prediction_ridge_sub = predict_price(ridge_grid_sub_model, df_predict_processed_sub)
+        prediction_elastic_net_full = predict_price(elastic_net_random_full_model, df_predict_processed_full)
+        prediction_elastic_net_sub = predict_price(elastic_net_random_sub_model, df_predict_processed_sub)
+
+        # Display predictions in tables with information text
+        st.write("**Predictions based on Full Data:**")
+        st.write("""
+        The predictions are based on the full dataset, which includes a wide range of car makes and models.
+        """)
+        table_full_data = pd.DataFrame({
+            'Model': ['Lasso', 'Ridge', 'Elastic Net'],
+            'Predicted Price (€)': [
+                prediction_lasso_full[0],
+                prediction_ridge_full[0],
+                prediction_elastic_net_full[0]
+            ]
+        })
+        table_full_data.index = [''] * len(table_full_data)  # Set empty string as index to hide it
+        st.table(table_full_data)
+
+        st.write("**Predictions based on Sub Data:**")
+        st.write("""
+        The predictions are based on a subset of the data, which includes only the 5 most sold car makes: Volkswagen, Opel, Ford, Skoda, and Renault.
+        If your car belongs to one of these 5 brands, the predictions based on the subset might be more accurate.
+        Otherwise, consider the predictions based on the full dataset.
+        """)
+        table_sub_data = pd.DataFrame({
+            'Model': ['Lasso', 'Ridge', 'Elastic Net'],
+            'Predicted Price (€)': [
+                prediction_lasso_sub[0],
+                prediction_ridge_sub[0],
+                prediction_elastic_net_sub[0]
+            ]
+        })
+        table_sub_data.index = [''] * len(table_sub_data)  # Set empty string as index to hide it
+        st.table(table_sub_data)
+        
 
 
 ###############################################################
