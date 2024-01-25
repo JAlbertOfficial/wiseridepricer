@@ -221,5 +221,12 @@ results_lasso = results_lasso.loc[new_order].reset_index(drop=True)
 results_lasso.to_csv(os.path.join("./models/model_evaluation/", "results_lasso.csv"), index=False)
 
 ###############################################################
-# Save best model
+# Save best models
 ###############################################################
+
+joblib.dump(lasso_bayes_full, 'lasso_bayes_full_model.pkl')
+joblib.dump(lasso_bayes_sub, 'lasso_bayes_sub_model.pkl')
+joblib.dump(lasso_random_full, 'lasso_random_full_model.pkl')
+joblib.dump(lasso_random_sub, 'lasso_random_sub_model.pkl')
+joblib.dump(lasso_grid_full, 'lasso_grid_full_model.pkl')
+joblib.dump(lasso_grid_sub, 'lasso_grid_sub_model.pkl')
