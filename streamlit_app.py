@@ -751,6 +751,11 @@ def prediction():
         prediction_elastic_net_full = predict_price(elastic_net_random_full_model, df_predict_processed_full)
         prediction_elastic_net_sub = predict_price(elastic_net_random_sub_model, df_predict_processed_sub)
 
+        st.write("**Predictions based on Full Data:**")
+        st.write("""
+        The predictions are based on the full dataset, which includes a wide range of car makes and models.
+        """)
+
         # Combine evaluation data with prediction data for full data
         table_full_data = pd.DataFrame({
             'Price': [
